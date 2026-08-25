@@ -72,6 +72,7 @@ Bitácora de la secuencia de prompts usada para construir esta aplicación. Cada
 |-----|-------------|------|
 | 1 | 2026-08-25 | MVP: temporizador 25/5, controles, notificaciones, contador de ciclos y UI responsive |
 | 2 | 2026-08-25 | Fondo más colorido y selector de métodos Pomodoro |
+| 3 | 2026-08-25 | Número del temporizador más pequeño y centrado dentro del círculo |
 
 ### Prompt 1 — MVP Pomodoro (2026-08-25)
 
@@ -80,5 +81,9 @@ Bitácora de la secuencia de prompts usada para construir esta aplicación. Cada
 ### Prompt 2 — Fondo colorido + métodos Pomodoro (2026-08-25)
 
 > Quiero que la página tenga un fondo más colorido, además que permita elegir entre los diferentes métodos de pomodoro
+
+### Prompt 3 — Tamaño y centrado del dígito (2026-08-25)
+
+> Ahora quiero que el número de la cuenta regresiva sea más pequeño y quede bien centrado dentro del círculo
 
 <!-- Próximos prompts se agregarán debajo con su número, fecha y texto -->
