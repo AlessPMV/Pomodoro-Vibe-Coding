@@ -2,9 +2,16 @@
   'use strict';
 
   const BASE_TITLE = 'Pomodoro';
-  const MODES = {
-    work: { key: 'work', label: 'Trabajo', duration: 25 * 60 },
-    break: { key: 'break', label: 'Descanso', duration: 5 * 60 },
+  const MODE_META = {
+    work: { label: 'Trabajo', short: 'Trabajo' },
+    short: { label: 'Descanso corto', short: 'Corto' },
+    long: { label: 'Descanso largo', short: 'Largo' },
+  };
+  const METHODS = {
+    classic: { name: 'Clásico', work: 25, short: 5, long: 15, longEvery: 4 },
+    rule5217: { name: 'Regla 52/17', work: 52, short: 17, long: 17, longEvery: 2 },
+    deep: { name: 'Trabajo profundo', work: 90, short: 20, long: 30, longEvery: 2 },
+    extended: { name: 'Extendido', work: 50, short: 10, long: 20, longEvery: 3 },
   };
   const RING_RADIUS = 130;
   const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
@@ -15,20 +22,30 @@
     start: document.getElementById('btn-start'),
     pause: document.getElementById('btn-pause'),
     reset: document.getElementById('btn-reset'),
+    methodSelect: document.getElementById('method-select'),
     modeButtons: Array.from(document.querySelectorAll('.mode-btn')),
     status: document.getElementById('status'),
     cycleCount: document.getElementById('cycle-count'),
     card: document.querySelector('.card'),
   };
 
-  let mode = MODES.work;
-  let remaining = mode.duration;
+  let methodKey = 'classic';
+  let mode = 'work';
+  let remaining = 0;
   let running = false;
   let endAt = 0;
   let tickerId = null;
   let titleAlertId = null;
   let completedPomodoros = 0;
   let audioContext = null;
+
+  function currentMethod() {
+    return METHODS[methodKey];
+  }
+
+  function getDuration(modeKey) {
+    return currentMethod()[modeKey] * 60;
+  }
 
   function formatTime(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60);
@@ -38,18 +55,25 @@
 
   function render() {
     els.time.textContent = formatTime(remaining);
-    const fraction = remaining / mode.duration;
+    const fraction = remaining / getDuration(mode);
     els.ringProgress.style.strokeDasharray = String(RING_CIRCUMFERENCE);
     els.ringProgress.style.strokeDashoffset = String(RING_CIRCUMFERENCE * (1 - fraction));
     if (!titleAlertId) {
-      document.title = `${formatTime(remaining)} · ${mode.label} — ${BASE_TITLE}`;
+      document.title = `${formatTime(remaining)} · ${MODE_META[mode].label} — ${BASE_TITLE}`;
     }
   }
 
   function updateControls() {
     els.start.disabled = running;
     els.pause.disabled = !running;
-    els.reset.disabled = !running && remaining === mode.duration;
+    els.reset.disabled = !running && remaining === getDuration(mode);
+  }
+
+  function updateModeLabels() {
+    els.modeButtons.forEach((btn) => {
+      const key = btn.dataset.modeKey;
+      btn.textContent = `${MODE_META[key].short} · ${currentMethod()[key]}`;
+    });
   }
 
   function announce(message) {
@@ -76,12 +100,12 @@
     ensureAudio();
     stopTitleAlert();
     if (remaining === 0) {
-      remaining = mode.duration;
+      remaining = getDuration(mode);
     }
     running = true;
     endAt = Date.now() + remaining * 1000;
     tickerId = setInterval(tick, 200);
-    announce(`${mode.label} en curso.`);
+    announce(`${MODE_META[mode].label} en curso.`);
     updateControls();
     render();
   }
@@ -100,8 +124,8 @@
     stopTicker();
     stopTitleAlert();
     running = false;
-    remaining = mode.duration;
-    announce(`${mode.label} reiniciado a ${formatTime(remaining)}.`);
+    remaining = getDuration(mode);
+    announce(`${MODE_META[mode].label} reiniciado a ${formatTime(remaining)}.`);
     updateControls();
     render();
   }
@@ -111,25 +135,27 @@
     running = false;
     playAlert();
     pulseCard();
-    const finishedLabel = mode.label;
-    if (mode.key === 'work') {
+    const finishedLabel = MODE_META[mode].label;
+    if (mode === 'work') {
       completedPomodoros += 1;
       els.cycleCount.textContent = String(completedPomodoros);
+      setMode(completedPomodoros % currentMethod().longEvery === 0 ? 'long' : 'short');
+    } else {
+      setMode('work');
     }
-    setMode(mode.key === 'work' ? 'break' : 'work');
-    announce(`${finishedLabel} finalizado. ${mode.label} (${formatTime(mode.duration)}) preparado.`);
+    announce(`${finishedLabel} finalizado. ${MODE_META[mode].label} (${formatTime(getDuration(mode))}) preparado.`);
     startTitleAlert(`⏰ ¡${finishedLabel} terminado!`);
     updateControls();
   }
 
-  function setMode(key) {
-    mode = MODES[key];
+  function setMode(modeKey) {
+    mode = modeKey;
     stopTicker();
     running = false;
-    remaining = mode.duration;
-    document.body.dataset.mode = key;
+    remaining = getDuration(modeKey);
+    document.body.dataset.mode = modeKey;
     els.modeButtons.forEach((btn) => {
-      const active = btn.dataset.modeKey === key;
+      const active = btn.dataset.modeKey === modeKey;
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     render();
@@ -151,7 +177,7 @@
       flip = !flip;
       document.title = flip
         ? message
-        : `${formatTime(remaining)} · ${mode.label} — ${BASE_TITLE}`;
+        : `${formatTime(remaining)} · ${MODE_META[mode].label} — ${BASE_TITLE}`;
     }, 1200);
   }
 
@@ -202,16 +228,30 @@
   els.pause.addEventListener('click', pause);
   els.reset.addEventListener('click', reset);
 
+  els.methodSelect.addEventListener('change', () => {
+    stopTicker();
+    stopTitleAlert();
+    running = false;
+    methodKey = els.methodSelect.value;
+    document.body.dataset.method = methodKey;
+    updateModeLabels();
+    setMode('work');
+    const method = currentMethod();
+    announce(`Método ${method.name}: ${method.work} min de trabajo, ${method.short} de descanso corto y ${method.long} de descanso largo (cada ${method.longEvery} pomodoros).`);
+  });
+
   els.modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       stopTitleAlert();
       const key = btn.dataset.modeKey;
-      if (key === mode.key && !running && remaining === mode.duration) return;
+      if (key === mode && !running && remaining === getDuration(key)) return;
       setMode(key);
-      announce(`${mode.label}: ${Math.round(mode.duration / 60)} minutos listos.`);
+      announce(`${MODE_META[key].label}: ${formatTime(getDuration(key))} listos.`);
     });
   });
 
+  document.body.dataset.method = methodKey;
+  updateModeLabels();
   setMode('work');
   announce('Listo para comenzar.');
 })();

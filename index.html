@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Temporizador Pomodoro con ciclos de 25 minutos de trabajo y 5 de descanso, alertas sonoras y contador de pomodoros.">
+  <meta name="description" content="Temporizador Pomodoro con varios métodos (25/5, 52/17, 90/20, 50/10), alertas sonoras, contador de pomodoros y fondo animado.">
   <meta name="theme-color" content="#d94f3d">
   <title>Pomodoro</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>">
@@ -19,9 +19,20 @@
     <h1 class="visually-hidden">Temporizador Pomodoro</h1>
 
     <section class="card" aria-label="Temporizador Pomodoro">
-      <div class="mode-switch" role="group" aria-label="Seleccionar modo del temporizador">
-        <button type="button" class="mode-btn" id="mode-work" data-mode-key="work" aria-pressed="true">Trabajo · 25 min</button>
-        <button type="button" class="mode-btn" id="mode-break" data-mode-key="break" aria-pressed="false">Descanso · 5 min</button>
+      <div class="method-field">
+        <label class="method-label" for="method-select">Método</label>
+        <select id="method-select" class="method-select">
+          <option value="classic" selected>Clásico · 25 / 5 / 15</option>
+          <option value="rule5217">Regla 52/17</option>
+          <option value="deep">Trabajo profundo · 90 / 20 / 30</option>
+          <option value="extended">Extendido · 50 / 10 / 20</option>
+        </select>
+      </div>
+
+      <div class="mode-switch" role="group" aria-label="Seleccionar fase del temporizador">
+        <button type="button" class="mode-btn" id="mode-work" data-mode-key="work" aria-pressed="true">Trabajo · 25</button>
+        <button type="button" class="mode-btn" id="mode-short" data-mode-key="short" aria-pressed="false">Corto · 5</button>
+        <button type="button" class="mode-btn" id="mode-long" data-mode-key="long" aria-pressed="false">Largo · 15</button>
       </div>
 
       <div class="timer">
@@ -48,7 +59,7 @@
   </main>
 
   <footer class="app-footer">
-    <p>Ciclos de 25 min de trabajo y 5 min de descanso · Hecho con HTML, CSS y JavaScript puros</p>
+    <p>Elige un método, inicia el temporizador y sigue tu ritmo · Hecho con HTML, CSS y JavaScript puros</p>
   </footer>
 
   <script src="js/app.js"></script>
